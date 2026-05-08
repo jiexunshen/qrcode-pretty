@@ -1,241 +1,88 @@
 # QR Code Pretty
 
-![Banner](./samples/banner.png)
+[中文](./README-Zh.md)
 
-## Overview
+This fork keeps the original `qrcode-pretty` command-line tool and adds a browser-based visual designer on top of it.
 
-Generate pretty QR codes.
+## What Changed
 
-QR Code Pretty uses the [python-qrcode](https://github.com/lincolnloop/python-qrcode) library to generate qr codes
-and provides various options to customize the qrcode.
-You can adjust style, color and add an image in the middle.
-Check out the usage for all available options.
+### Visual Designer
 
-## Table of Contents
+Added [`docs/qrcode-designer.html`](./docs/qrcode-designer.html), a local browser page for building QR codes visually.
 
-- [Installation](#installation)
-  - [NixOS](#nixos)
-  - [Debian/Ubuntu](#debianubuntu)
-  - [Arch Linux](<#arch-linux-(aur)>)
-  - [Using uv](#using-uv)
-  - [Using pipx](#using-pipx)
-- [Usage](#usage)
-  - [Command-Line Options](#command-line-options)
-  - [Sample Gallery](#sample-gallery)
-- [Contributing](#contributing)
-- [Package Information](#package-information)
+It supports the same style controls as the original CLI:
 
-## Installation
+- module style
+- inner finder style
+- outer finder style
+- base color
+- inner finder color
+- outer finder color
+- center image
+- transparent background
+- QR version
+- box size
+- border
+- error correction level
 
-### NixOS
+The designer can export both SVG and PNG.
 
-This tool is packaged as a NixOS package. You can install it using the following flake input:
+### Presets
 
-```nix
-qrcode-pretty = {
-  url = "github:mrinfinidy/qrcode-pretty";
-  inputs.nixpkgs.follows = "nixpkgs";
-};
-```
+Added built-in presets:
 
-Add the flake input to the outputs:
+- Classic high contrast
+- GitHub repository
+- arXiv preprint
+- Soft round accent
 
-```nix
-outputs = {
-  # your other outputs
-  qrcode-pretty,
-  ...
-}@inputs:
-```
+Presets tune the QR module colors and finder colors to match the selected logo while keeping enough contrast for scanning.
 
-Then add to your home-manager config:
+The page also supports browser-local saved presets. Saved presets are stored in `localStorage`.
 
-```nix
-home-manager.users.<your-user> = {
-    home.packages = [
-        (inputs.qrcode-pretty.packages.${pkgs.system}.default)
-    ];
-};
-```
+### Logo Handling
 
-Or build and run directly:
+Added bundled logo assets:
 
-```bash
-# Build with Nix
-nix build github:mrinfinidy/qrcode-pretty
+- [`assets/github-logo.svg`](./assets/github-logo.svg)
+- [`assets/arxiv-logo.svg`](./assets/arxiv-logo.svg)
 
-# Run from local checkout
-nix run .#qrcode-pretty -- -d "your data here"
-```
+The designer clears QR modules behind the logo using the QR module grid instead of raw pixels.
+This keeps the logo backplate aligned when changing logo size, logo padding, box size or border.
 
-Or to test without permanent installation:
+Exported SVG and PNG files embed logo images as data URLs, so the logo does not disappear after export.
 
-```bash
-nix run github:mrinfinidy/qrcode-pretty --override-input nixpkgs nixpkgs
-```
+### URL Validation
 
-### Debian/Ubuntu
+The visual designer only generates QR codes for valid `http` or `https` website addresses.
+Invalid input shows a warning and leaves the preview empty.
 
-Download and install the `.deb` package from the [releases page](https://github.com/mrinfinidy/qrcode-pretty/releases):
+### Language Switcher
+
+Added an `EN` / `ZH` segmented language switcher.
+
+### Assets
+
+Moved logo files into `assets/` and renamed them to stable project asset names:
+
+- `GitHub_Invertocat_Black.svg` -> `assets/github-logo.svg`
+- `arxiv-logo.svg` -> `assets/arxiv-logo.svg`
+
+## Run the Designer
+
+From the project root:
 
 ```bash
-# Download the latest .deb package
-wget https://github.com/mrinfinidy/qrcode-pretty/releases/download/<version>/qrcode-pretty_<version>-1_all.deb
-
-# Install the package
-sudo dpkg -i qrcode-pretty_<version>-1_all.deb
-
-# Install dependencies if needed
-sudo apt-get install -f
+python -m http.server 8000 --bind 127.0.0.1
 ```
 
-Or build from source (see [PACKAGING.md](PACKAGING.md) for details):
+Then open:
 
-```bash
-dpkg-buildpackage -us -uc -b
-sudo dpkg -i ../qrcode-pretty_<version>-1_all.deb
+```text
+http://127.0.0.1:8000/docs/qrcode-designer.html
 ```
 
-### Arch Linux (AUR)
+## Notes
 
-Install from the AUR using your preferred AUR helper:
-
-```bash
-# Using yay
-yay -S qrcode-pretty
-
-# Using paru
-paru -S qrcode-pretty
-
-# Or manually with makepkg
-git clone https://aur.archlinux.org/qrcode-pretty.git
-cd qrcode-pretty
-makepkg -si
-```
-
-### Using uv
-
-[uv](https://github.com/astral-sh/uv) is a fast Python package installer and resolver, which I prefer over pip/pipx:
-
-```bash
-uv tool install qrcode-pretty
-```
-
-### Using pipx
-
-For installing as a standalone command-line tool:
-
-```bash
-pipx install qrcode-pretty
-```
-
-## Usage
-
-QR Code Pretty provides the `qrcode-pretty` command-line tool.
-
-### Basic Usage
-
-Generate a QR code with minimal options:
-
-```bash
-qrcode-pretty -d "https://github.com/mrinfinidy/qrcode-pretty"
-```
-
-### Command-Line Options
-
-Use `qrcode-pretty -h` to print all available options:
-
-```
-Options:
-  -h, --help                              Show this help message and exit
-  -d, --data <data>                       Data to encode in QR code (required)
-  -i, --image <image>                     Input image file name
-  -s, --style <style>                     Style for the QR code modules
-      --style-inner <style>               Style for the inner eyes
-      --style-outer <style>               Style for the outer eyes
-  -b, --base <hex>                        Base color hex code (e.g. #000000)
-  -n, --color-inner <hex>                 Inner eye color hex code
-  -r, --color-outer <hex>                 Outer eye color hex code
-  -o, --output <directory or filename>    Output directory path or filename (default: ~/Pictures/qrcode-pretty/qrcode.png)
-      --svg                               Also generate SVG output
-      --transparent                       Transparent QR code background
-      --version <int>                     QR version (default: 5)
-      --box-size <int>                    Box size in pixels (default: 10)
-      --border <int>                      Border size in boxes (default: 4)
-      --error-correction <L|M|Q|H>        Error correction level (default: H)
-
-Available styles: square, gapped-square, circle, round, vertical-bars, horizontal-bars
-```
-
-**Note:** When embedding a center image (logo), it is recommended to use a high error correction level (default: H).
-
-**About the `--image` option:**
-
-- Use `--image /path/to/your/logo.png` to embed your own image in the QR code center
-- Use `--image default` to use the bundled demonstration image (included with all installation methods)
-- Omit `--image` to generate a QR code without a center image
-
-### Sample Gallery
-
-#### QR Code Github
-
-![qrcode github cat](./samples/qrcode-cat.png)
-
-`qrcode-pretty --data "https://github.com/mrinfinidy/qrcode-pretty" --image default --style round --style-inner round --style-outer round --base "#000000" --color-inner "#d3869b" --color-outer "#458588" --output "~/Pictures/"`
-
-![qrcode github cat 2](./samples/qrcode-cat-2.png)
-
-`qrcode-pretty --data "https://github.com/mrinfinidy/qrcode-pretty" --image default --style circle --style-inner round --style-outer round --base "#1d2021" --color-inner "#666341" --color-outer "#1d2021" --output "~/Pictures/"`
-
-![qrcode github](./samples/qrcode-purple.png)
-
-`qrcode-pretty --data "https://github.com/mrinfinidy/qrcode-pretty" --style round --style-inner round --style-outer round --base "#8e8ece" --color-inner "#6cf2e5" --color-outer "#40E0D0" --output "~/Pictures/"`
-
-#### QR Code afkdev8 (my homepage)
-
-![qrcode afkdev8 vertical-bars](./samples/qrcode-afkdev8-vertical.png)
-
-`qrcode-pretty --data "https://www.afkdev8.com/" --image "~/Pictures/afkdev8-logo.png" --style vertical-bars --style-inner round --style-outer round --base "#000000" --color-inner "#000000" --color-outer "#000000" --output "~/Pictures/"`
-
-![qrcode afkdev8 horizontal-bars](./samples/qrcode-afkdev-horizontal.png)
-
-`qrcode-pretty --data "https://www.afkdev8.com/" --image "~/Pictures/afkdev8-logo-dark.png" --style horizontal-bars --style-inner round --style-outer round --base "#000000" --color-inner "#000000" --color-outer "#000000" --output "~/Pictures/"`
-
-#### QR Code lemons
-
-![qrcode lemons](./samples/qrcode-lemons.png)
-
-`qrcode-pretty --data "lemons" --image "~/Pictures/lemons.png" --style square --style-inner circle --style-outer gapped-square --base "#000000" --color-inner "#000000" --color-outer "#000000" --output "~/Pictures/"`
-
-## Contributing
-
-See [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for development requirements, setup and testing guide.
-
-## Package Information
-
-This package follows modern Python packaging standards:
-
-- **Package Name**: `qrcode-pretty`
-- **Module Name**: `qrcode_pretty`
-- **Build System**: [Hatchling](https://hatch.pypa.io/)
-- **Configuration**: `pyproject.toml` (PEP 621 compliant)
-- **Minimum Python**: 3.8+
-
-### Project Structure
-
-```
-qrcode-pretty/
-├── src/
-│   └── qrcode_pretty/
-│       ├── __init__.py
-│       ├── entrypoint.py
-│       ├── qr_code_generator.py
-│       └── const.py
-├── pyproject.toml
-├── README.md
-└── LICENSE
-```
-
-## Author
-
-afkdev8 `<mail@afkdev8.com>`
+The original Python package and CLI remain available.
+This README only describes the changes made on top of the original project.

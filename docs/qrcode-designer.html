@@ -1,0 +1,1469 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QR Code Pretty Designer</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #16181d;
+      --muted: #616977;
+      --line: #d9dee7;
+      --accent: #0f766e;
+      --accent-strong: #0b5f59;
+      --danger: #b42318;
+      --shadow: 0 18px 48px rgba(16, 24, 40, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(320px, 420px) minmax(420px, 1fr);
+    }
+
+    .controls {
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    .preview {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 18px;
+      min-width: 0;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      margin: 0 0 20px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    fieldset {
+      margin: 0 0 18px;
+      padding: 0;
+      border: 0;
+    }
+
+    legend {
+      margin-bottom: 12px;
+      font-size: 17px;
+      font-weight: 700;
+      color: #303642;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 12px;
+      color: #2b313b;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+      padding: 9px 10px;
+    }
+
+    textarea {
+      min-height: 94px;
+      resize: vertical;
+      line-height: 1.4;
+    }
+
+    input[type="color"] {
+      height: 42px;
+      padding: 4px;
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      min-height: 18px;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      width: 168px;
+      min-height: 40px;
+      border: 1px solid #7b7480;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .segmented button {
+      min-height: 40px;
+      border: 0;
+      border-right: 1px solid #7b7480;
+      background: #fff;
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .segmented button:last-child {
+      border-right: 0;
+    }
+
+    .segmented button[aria-pressed="true"] {
+      background: #e7e8f8;
+      color: #3c4050;
+    }
+
+    .grid-2,
+    .grid-3 {
+      display: grid;
+      gap: 10px;
+    }
+
+    .grid-2 {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .inline {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .inline span {
+      color: #2b313b;
+    }
+
+    .preview-stage {
+      display: grid;
+      place-items: center;
+      min-height: 420px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: auto;
+      padding: 28px;
+    }
+
+    .qr-frame {
+      display: grid;
+      place-items: center;
+      min-width: 280px;
+      min-height: 280px;
+    }
+
+    #qrSvg {
+      max-width: min(72vh, 100%);
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .button {
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent);
+      color: #fff;
+      min-height: 40px;
+      padding: 9px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .button.secondary {
+      background: #fff;
+      color: var(--accent-strong);
+    }
+
+    .button.danger {
+      border-color: #f4c7c3;
+      background: #fff;
+      color: var(--danger);
+    }
+
+    .status {
+      min-height: 22px;
+      color: var(--danger);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .command {
+      width: 100%;
+      margin: 0;
+      padding: 14px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #111827;
+      color: #f9fafb;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .preset-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .language-field {
+      display: grid;
+      grid-template-columns: auto 168px;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .language-field legend {
+      margin: 0;
+    }
+
+    .preset-editor[hidden],
+    .logo-controls[hidden] {
+      display: none;
+    }
+
+    @media (max-width: 920px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .preview {
+        padding: 18px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .controls {
+        padding: 18px;
+      }
+
+      .grid-2,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .preview-stage {
+        min-height: 320px;
+        padding: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="controls" aria-label="QR code controls">
+      <h1>QR Code Pretty Designer</h1>
+
+      <fieldset class="language-field">
+        <legend data-i18n="languageLegend">Language</legend>
+        <div class="segmented" role="group" aria-label="Language">
+          <button class="language-option" type="button" data-language="en" aria-pressed="true">EN</button>
+          <button class="language-option" type="button" data-language="zh" aria-pressed="false">ZH</button>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend data-i18n="presetsLegend">Presets</legend>
+        <label>
+          <span data-i18n="builtInPresetLabel">Built-in preset</span>
+          <select id="builtInPreset"></select>
+        </label>
+        <div class="preset-row preset-delete-row" hidden>
+          <label>
+            <span data-i18n="savedPresetLabel">Saved preset</span>
+            <select id="savedPreset"></select>
+          </label>
+          <button class="button secondary" id="applySavedPreset" type="button" data-i18n="applyButton">Apply</button>
+        </div>
+        <div class="preset-editor" id="presetEditor" hidden>
+          <div class="preset-row">
+            <label>
+              <span data-i18n="presetNameLabel">Preset name</span>
+              <input id="presetName" type="text" value="My QR style">
+            </label>
+            <button class="button" id="savePreset" type="button" data-i18n="saveButton">Save</button>
+          </div>
+          <button class="button danger" id="deletePreset" type="button" data-i18n="deletePresetButton">Delete saved preset</button>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend data-i18n="contentLegend">Content</legend>
+        <label>
+          <span data-i18n="dataLabel">Data</span>
+          <textarea id="dataInput">https://github.com/mrinfinidy/qrcode-pretty</textarea>
+        </label>
+        <label>
+          <span data-i18n="centerImageLabel">Center image</span>
+          <select id="imageMode">
+            <option value="blank">None</option>
+            <option value="default">Default asset</option>
+            <option value="arxiv">arXiv mark</option>
+            <option value="github">GitHub mark</option>
+            <option value="upload">Upload image</option>
+          </select>
+        </label>
+        <label id="uploadWrap" hidden>
+          <span data-i18n="uploadLabel">Upload</span>
+          <input id="imageUpload" type="file" accept="image/*">
+        </label>
+        <div class="grid-2 logo-controls" id="logoControls" hidden>
+          <label>
+            <span data-i18n="logoSizeLabel">Logo size</span>
+            <input id="logoSize" type="number" min="8" max="28" value="18">
+          </label>
+          <label>
+            <span data-i18n="logoPaddingLabel">Logo padding</span>
+            <input id="logoPadding" type="number" min="0" max="6" value="2">
+          </label>
+        </div>
+        <label class="inline logo-controls" id="logoBackplateWrap" hidden>
+          <input id="logoBackplate" type="checkbox" checked>
+          <span data-i18n="logoBackplateLabel">Clear QR modules behind logo</span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend data-i18n="stylesLegend">Styles</legend>
+        <label>
+          <span data-i18n="moduleStyleLabel">Module style</span>
+          <select id="style"></select>
+        </label>
+        <div class="grid-2">
+          <label>
+            <span data-i18n="innerEyeLabel">Inner eye</span>
+            <select id="styleInner"></select>
+          </label>
+          <label>
+            <span data-i18n="outerEyeLabel">Outer eye</span>
+            <select id="styleOuter"></select>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend data-i18n="colorsLegend">Colors</legend>
+        <div class="grid-3">
+          <label>
+            <span data-i18n="baseColorLabel">Base</span>
+            <input id="baseColor" type="color" value="#000000">
+          </label>
+          <label>
+            <span data-i18n="innerEyeColorLabel">Inner eye</span>
+            <input id="innerColor" type="color" value="#d3869b">
+          </label>
+          <label>
+            <span data-i18n="outerEyeColorLabel">Outer eye</span>
+            <input id="outerColor" type="color" value="#458588">
+          </label>
+        </div>
+        <label class="inline">
+          <input id="transparent" type="checkbox">
+          <span data-i18n="transparentLabel">Transparent background</span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend data-i18n="qrOptionsLegend">QR options</legend>
+        <div class="grid-2">
+          <label>
+            <span data-i18n="versionLabel">Version</span>
+            <input id="version" type="number" min="1" max="40" value="5">
+          </label>
+          <label>
+            <span data-i18n="errorCorrectionLabel">Error correction</span>
+            <select id="errorCorrection">
+              <option value="L">L</option>
+              <option value="M">M</option>
+              <option value="Q">Q</option>
+              <option value="H" selected>H</option>
+            </select>
+          </label>
+          <label>
+            <span data-i18n="boxSizeLabel">Box size</span>
+            <input id="boxSize" type="number" min="2" max="48" value="10">
+          </label>
+          <label>
+            <span data-i18n="borderLabel">Border</span>
+            <input id="border" type="number" min="0" max="24" value="4">
+          </label>
+        </div>
+      </fieldset>
+    </section>
+
+    <section class="preview" aria-label="QR code preview">
+      <div>
+        <div class="actions">
+          <button class="button" id="downloadSvg" type="button" data-i18n="downloadSvgButton">Download SVG</button>
+          <button class="button secondary" id="downloadPng" type="button" data-i18n="downloadPngButton">Download PNG</button>
+        </div>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="preview-stage">
+        <div class="qr-frame" id="qrMount"></div>
+      </div>
+
+      <pre class="command" id="commandPreview"></pre>
+    </section>
+  </main>
+
+  <script>
+    const STYLES = [
+      "square",
+      "gapped-square",
+      "circle",
+      "round",
+      "vertical-bars",
+      "horizontal-bars"
+    ];
+
+    const PRESET_STORAGE_KEY = "qrcode-pretty-designer-presets";
+    const LANGUAGE_STORAGE_KEY = "qrcode-pretty-designer-language";
+    const TRANSLATIONS = {
+      en: {
+        pageTitle: "QR Code Pretty Designer",
+        subtitle: "Customize the same style variables exposed by the Python CLI.",
+        controlsLabel: "QR code controls",
+        previewLabel: "QR code preview",
+        languageLegend: "Language",
+        languageLabel: "Language",
+        presetsLegend: "Presets",
+        builtInPresetLabel: "Built-in preset",
+        savedPresetLabel: "Saved preset",
+        applyButton: "Apply",
+        presetNameLabel: "Preset name",
+        saveButton: "Save",
+        deletePresetButton: "Delete saved preset",
+        contentLegend: "Content",
+        dataLabel: "Data",
+        centerImageLabel: "Center image",
+        uploadLabel: "Upload",
+        logoSizeLabel: "Logo size",
+        logoPaddingLabel: "Logo padding",
+        logoBackplateLabel: "Clear QR modules behind logo",
+        stylesLegend: "Styles",
+        moduleStyleLabel: "Module style",
+        innerEyeLabel: "Inner eye",
+        outerEyeLabel: "Outer eye",
+        colorsLegend: "Colors",
+        baseColorLabel: "Base",
+        innerEyeColorLabel: "Inner eye",
+        outerEyeColorLabel: "Outer eye",
+        transparentLabel: "Transparent background",
+        qrOptionsLegend: "QR options",
+        versionLabel: "Version",
+        errorCorrectionLabel: "Error correction",
+        boxSizeLabel: "Box size",
+        borderLabel: "Border",
+        downloadSvgButton: "Download SVG",
+        downloadPngButton: "Download PNG",
+        choosePreset: "Choose preset",
+        noSavedPresets: "No saved presets",
+        imageBlank: "None",
+        imageDefault: "Default asset",
+        imageArxiv: "arXiv mark",
+        imageGithub: "GitHub mark",
+        imageUpload: "Upload image",
+        dataRequired: "Data is required.",
+        invalidWebsiteAddress: "Enter a valid http or https website address.",
+        qrLibraryFailed: "QR library failed to load. Check your internet connection.",
+        versionFallback: "Preview used QR version {actual} because the data does not fit in version {requested}.",
+        lowContrast: "{label} color is low contrast for scanning",
+        contrastBase: "base modules",
+        contrastInner: "inner finder",
+        contrastOuter: "outer finder",
+        pngFailed: "Could not render PNG from the current SVG.",
+        presetNameRequired: "Preset name is required.",
+        presetSaved: "Saved preset \"{name}\" locally.",
+        presetDeleted: "Deleted preset \"{name}\"."
+      },
+      zh: {
+        pageTitle: "QR Code Pretty 设计器",
+        subtitle: "可视化定制 Python CLI 支持的同一组样式变量。",
+        controlsLabel: "二维码设置",
+        previewLabel: "二维码预览",
+        languageLegend: "语言",
+        languageLabel: "语言",
+        presetsLegend: "预设",
+        builtInPresetLabel: "内置预设",
+        savedPresetLabel: "已保存预设",
+        applyButton: "应用",
+        presetNameLabel: "预设名称",
+        saveButton: "保存",
+        deletePresetButton: "删除已保存预设",
+        contentLegend: "内容",
+        dataLabel: "数据",
+        centerImageLabel: "中心图片",
+        uploadLabel: "上传",
+        logoSizeLabel: "Logo 尺寸",
+        logoPaddingLabel: "Logo 留白",
+        logoBackplateLabel: "清除 Logo 后方二维码点阵",
+        stylesLegend: "样式",
+        moduleStyleLabel: "模块样式",
+        innerEyeLabel: "内定位点",
+        outerEyeLabel: "外定位点",
+        colorsLegend: "颜色",
+        baseColorLabel: "主体",
+        innerEyeColorLabel: "内定位点",
+        outerEyeColorLabel: "外定位点",
+        transparentLabel: "透明背景",
+        qrOptionsLegend: "二维码选项",
+        versionLabel: "版本",
+        errorCorrectionLabel: "纠错等级",
+        boxSizeLabel: "方块尺寸",
+        borderLabel: "边距",
+        downloadSvgButton: "下载 SVG",
+        downloadPngButton: "下载 PNG",
+        choosePreset: "选择预设",
+        noSavedPresets: "暂无已保存预设",
+        imageBlank: "无",
+        imageDefault: "默认素材",
+        imageArxiv: "arXiv 标志",
+        imageGithub: "GitHub 标志",
+        imageUpload: "上传图片",
+        dataRequired: "数据不能为空。",
+        invalidWebsiteAddress: "请输入合法的 http 或 https 网站地址。",
+        qrLibraryFailed: "二维码库加载失败，请检查网络连接。",
+        versionFallback: "预览使用了二维码版本 {actual}，因为当前数据无法放入版本 {requested}。",
+        lowContrast: "{label} 颜色对比度偏低，可能影响扫描",
+        contrastBase: "主体模块",
+        contrastInner: "内定位点",
+        contrastOuter: "外定位点",
+        pngFailed: "无法从当前 SVG 渲染 PNG。",
+        presetNameRequired: "请输入预设名称。",
+        presetSaved: "已将预设“{name}”保存到本地。",
+        presetDeleted: "已删除预设“{name}”。"
+      }
+    };
+    const ARXIV_LOGO_PATH = "../assets/arxiv-logo.svg";
+    const GITHUB_LOGO_PATH = "../assets/github-logo.svg";
+
+    const BUILT_IN_PRESETS = [
+      {
+        id: "classic",
+        name: "Classic high contrast",
+        values: {
+          imageMode: "blank",
+          style: "square",
+          styleInner: "square",
+          styleOuter: "square",
+          baseColor: "#000000",
+          innerColor: "#000000",
+          outerColor: "#000000",
+          transparent: false,
+          version: 5,
+          boxSize: 10,
+          border: 4,
+          errorCorrection: "H",
+          logoSize: 18,
+          logoPadding: 2,
+          logoBackplate: true
+        }
+      },
+      {
+        id: "github",
+        name: "GitHub repository",
+        values: {
+          data: "https://github.com/mrinfinidy/qrcode-pretty",
+          imageMode: "github",
+          style: "round",
+          styleInner: "round",
+          styleOuter: "round",
+          baseColor: "#24292f",
+          innerColor: "#000000",
+          outerColor: "#24292f",
+          transparent: false,
+          version: 7,
+          boxSize: 10,
+          border: 4,
+          errorCorrection: "H",
+          logoSize: 18,
+          logoPadding: 2,
+          logoBackplate: true
+        }
+      },
+      {
+        id: "arxiv",
+        name: "arXiv preprint",
+        values: {
+          data: "https://arxiv.org/abs/2401.00001",
+          imageMode: "arxiv",
+          style: "round",
+          styleInner: "round",
+          styleOuter: "round",
+          baseColor: "#5f5750",
+          innerColor: "#111111",
+          outerColor: "#aa142d",
+          transparent: false,
+          version: 8,
+          boxSize: 10,
+          border: 4,
+          errorCorrection: "H",
+          logoSize: 24,
+          logoPadding: 2,
+          logoBackplate: true
+        }
+      },
+      {
+        id: "soft-round",
+        name: "Soft round accent",
+        values: {
+          imageMode: "blank",
+          style: "round",
+          styleInner: "circle",
+          styleOuter: "round",
+          baseColor: "#134e4a",
+          innerColor: "#111827",
+          outerColor: "#0b5f59",
+          transparent: false,
+          version: 5,
+          boxSize: 10,
+          border: 4,
+          errorCorrection: "H",
+          logoSize: 18,
+          logoPadding: 2,
+          logoBackplate: true
+        }
+      }
+    ];
+
+    const els = {
+      languageOptions: Array.from(document.querySelectorAll(".language-option")),
+      builtInPreset: document.getElementById("builtInPreset"),
+      savedPreset: document.getElementById("savedPreset"),
+      applySavedPreset: document.getElementById("applySavedPreset"),
+      presetSavedRow: document.querySelector(".preset-delete-row"),
+      presetEditor: document.getElementById("presetEditor"),
+      presetName: document.getElementById("presetName"),
+      savePreset: document.getElementById("savePreset"),
+      deletePreset: document.getElementById("deletePreset"),
+      data: document.getElementById("dataInput"),
+      imageMode: document.getElementById("imageMode"),
+      uploadWrap: document.getElementById("uploadWrap"),
+      imageUpload: document.getElementById("imageUpload"),
+      logoControls: document.getElementById("logoControls"),
+      logoBackplateWrap: document.getElementById("logoBackplateWrap"),
+      logoSize: document.getElementById("logoSize"),
+      logoPadding: document.getElementById("logoPadding"),
+      logoBackplate: document.getElementById("logoBackplate"),
+      style: document.getElementById("style"),
+      styleInner: document.getElementById("styleInner"),
+      styleOuter: document.getElementById("styleOuter"),
+      baseColor: document.getElementById("baseColor"),
+      innerColor: document.getElementById("innerColor"),
+      outerColor: document.getElementById("outerColor"),
+      transparent: document.getElementById("transparent"),
+      version: document.getElementById("version"),
+      boxSize: document.getElementById("boxSize"),
+      border: document.getElementById("border"),
+      errorCorrection: document.getElementById("errorCorrection"),
+      status: document.getElementById("status"),
+      qrMount: document.getElementById("qrMount"),
+      commandPreview: document.getElementById("commandPreview"),
+      downloadSvg: document.getElementById("downloadSvg"),
+      downloadPng: document.getElementById("downloadPng")
+    };
+
+    let currentSvg = "";
+    let currentSize = 0;
+    let uploadedLogo = "";
+    const logoDataUrlCache = new Map();
+    let baselineSettings = "";
+    let currentLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY) ||
+      (navigator.language && navigator.language.toLowerCase().startsWith("zh") ? "zh" : "en");
+
+    function t(key, replacements = {}) {
+      const dictionary = TRANSLATIONS[currentLanguage] || TRANSLATIONS.en;
+      let value = dictionary[key] || TRANSLATIONS.en[key] || key;
+      Object.entries(replacements).forEach(([name, replacement]) => {
+        value = value.replaceAll(`{${name}}`, replacement);
+      });
+      return value;
+    }
+
+    function setStatus(key, replacements = {}) {
+      els.status.textContent = t(key, replacements);
+    }
+
+    function fillStyleSelect(select, selected) {
+      select.innerHTML = "";
+      STYLES.forEach((style) => {
+        const option = document.createElement("option");
+        option.value = style;
+        option.textContent = style;
+        option.selected = style === selected;
+        select.appendChild(option);
+      });
+    }
+
+    fillStyleSelect(els.style, "round");
+    fillStyleSelect(els.styleInner, "round");
+    fillStyleSelect(els.styleOuter, "round");
+
+    function applyLanguage(language) {
+      currentLanguage = language;
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+      document.documentElement.lang = language === "zh" ? "zh-CN" : "en";
+      document.title = t("pageTitle");
+      document.querySelector("h1").textContent = t("pageTitle");
+      document.querySelector(".controls").setAttribute("aria-label", t("controlsLabel"));
+      document.querySelector(".preview").setAttribute("aria-label", t("previewLabel"));
+      document.querySelectorAll("[data-i18n]").forEach((node) => {
+        node.textContent = t(node.dataset.i18n);
+      });
+      document.querySelector('#imageMode option[value="blank"]').textContent = t("imageBlank");
+      document.querySelector('#imageMode option[value="default"]').textContent = t("imageDefault");
+      document.querySelector('#imageMode option[value="arxiv"]').textContent = t("imageArxiv");
+      document.querySelector('#imageMode option[value="github"]').textContent = t("imageGithub");
+      document.querySelector('#imageMode option[value="upload"]').textContent = t("imageUpload");
+      els.languageOptions.forEach((option) => {
+        option.setAttribute("aria-pressed", String(option.dataset.language === language));
+      });
+      hydratePresetSelects();
+      updateCommand();
+    }
+
+    function readSavedPresets() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(PRESET_STORAGE_KEY) || "[]");
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function writeSavedPresets(presets) {
+      localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(presets));
+    }
+
+    function hydratePresetSelects() {
+      els.builtInPreset.innerHTML = `<option value="">${t("choosePreset")}</option>`;
+      BUILT_IN_PRESETS.forEach((preset) => {
+        const option = document.createElement("option");
+        option.value = preset.id;
+        option.textContent = preset.name;
+        els.builtInPreset.appendChild(option);
+      });
+
+      const saved = readSavedPresets();
+      els.presetSavedRow.hidden = saved.length === 0;
+      els.savedPreset.innerHTML = saved.length
+        ? ""
+        : `<option value="">${t("noSavedPresets")}</option>`;
+      saved.forEach((preset, index) => {
+        const option = document.createElement("option");
+        option.value = String(index);
+        option.textContent = preset.name;
+        els.savedPreset.appendChild(option);
+      });
+    }
+
+    hydratePresetSelects();
+
+    function clampNumber(input, fallback) {
+      const min = Number(input.min);
+      const max = Number(input.max);
+      const parsed = Number.parseInt(input.value, 10);
+      if (Number.isNaN(parsed)) {
+        input.value = String(fallback);
+        return fallback;
+      }
+      const clamped = Math.max(min, Math.min(max, parsed));
+      input.value = String(clamped);
+      return clamped;
+    }
+
+    function getCurrentSettings() {
+      return {
+        data: els.data.value,
+        imageMode: els.imageMode.value,
+        style: els.style.value,
+        styleInner: els.styleInner.value,
+        styleOuter: els.styleOuter.value,
+        baseColor: els.baseColor.value,
+        innerColor: els.innerColor.value,
+        outerColor: els.outerColor.value,
+        transparent: els.transparent.checked,
+        version: Number(els.version.value),
+        boxSize: Number(els.boxSize.value),
+        border: Number(els.border.value),
+        errorCorrection: els.errorCorrection.value,
+        logoSize: Number(els.logoSize.value),
+        logoPadding: Number(els.logoPadding.value),
+        logoBackplate: els.logoBackplate.checked
+      };
+    }
+
+    function settingsSignature() {
+      return JSON.stringify(getCurrentSettings());
+    }
+
+    function setBaselineToCurrentSettings() {
+      baselineSettings = settingsSignature();
+      updatePresetEditorVisibility();
+    }
+
+    function updatePresetEditorVisibility() {
+      if (!baselineSettings) {
+        els.presetEditor.hidden = true;
+        return;
+      }
+      els.presetEditor.hidden = settingsSignature() === baselineSettings;
+    }
+
+    function updateImageControlsVisibility() {
+      const hasLogo = els.imageMode.value !== "blank";
+      els.uploadWrap.hidden = els.imageMode.value !== "upload";
+      els.logoControls.hidden = !hasLogo;
+      els.logoBackplateWrap.hidden = !hasLogo;
+    }
+
+    function applySettings(settings) {
+      if ("data" in settings) els.data.value = settings.data;
+      if ("imageMode" in settings) els.imageMode.value = settings.imageMode;
+      if ("style" in settings) els.style.value = settings.style;
+      if ("styleInner" in settings) els.styleInner.value = settings.styleInner;
+      if ("styleOuter" in settings) els.styleOuter.value = settings.styleOuter;
+      if ("baseColor" in settings) els.baseColor.value = settings.baseColor;
+      if ("innerColor" in settings) els.innerColor.value = settings.innerColor;
+      if ("outerColor" in settings) els.outerColor.value = settings.outerColor;
+      if ("transparent" in settings) els.transparent.checked = Boolean(settings.transparent);
+      if ("version" in settings) els.version.value = settings.version;
+      if ("boxSize" in settings) els.boxSize.value = settings.boxSize;
+      if ("border" in settings) els.border.value = settings.border;
+      if ("errorCorrection" in settings) els.errorCorrection.value = settings.errorCorrection;
+      if ("logoSize" in settings) els.logoSize.value = settings.logoSize;
+      if ("logoPadding" in settings) els.logoPadding.value = settings.logoPadding;
+      if ("logoBackplate" in settings) els.logoBackplate.checked = Boolean(settings.logoBackplate);
+      void render();
+      setBaselineToCurrentSettings();
+    }
+
+    function escAttr(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    function isValidWebsiteAddress(value) {
+      try {
+        const url = new URL(value.trim());
+        return ["http:", "https:"].includes(url.protocol) && Boolean(url.hostname);
+      } catch {
+        return false;
+      }
+    }
+
+    function hexToRgb(hex) {
+      const clean = hex.replace("#", "");
+      return {
+        r: Number.parseInt(clean.slice(0, 2), 16),
+        g: Number.parseInt(clean.slice(2, 4), 16),
+        b: Number.parseInt(clean.slice(4, 6), 16)
+      };
+    }
+
+    function relativeLuminance(hex) {
+      const { r, g, b } = hexToRgb(hex);
+      const channels = [r, g, b].map((channel) => {
+        const value = channel / 255;
+        return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+      });
+      return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+    }
+
+    function contrastAgainstWhite(hex) {
+      const light = 1.0;
+      const dark = relativeLuminance(hex);
+      return (light + 0.05) / (dark + 0.05);
+    }
+
+    function getContrastWarnings() {
+      const warnings = [];
+      [
+        [t("contrastBase"), els.baseColor.value],
+        [t("contrastInner"), els.innerColor.value],
+        [t("contrastOuter"), els.outerColor.value]
+      ].forEach(([label, color]) => {
+        if (contrastAgainstWhite(color) < 4.5) warnings.push(t("lowContrast", { label }));
+      });
+      return warnings;
+    }
+
+    function hasNeighbor(matrix, row, col, direction, count) {
+      let nextRow = row;
+      let nextCol = col;
+      if (direction === "N") nextRow -= 1;
+      if (direction === "S") nextRow += 1;
+      if (direction === "E") nextCol += 1;
+      if (direction === "W") nextCol -= 1;
+      if (nextRow < 0 || nextRow >= count || nextCol < 0 || nextCol >= count) return false;
+      return Boolean(matrix[nextRow][nextCol]);
+    }
+
+    function isEyeModule(col, row, count) {
+      const positions = [[0, 0], [count - 7, 0], [0, count - 7]];
+      return positions.some(([x, y]) => col >= x && col < x + 7 && row >= y && row < y + 7);
+    }
+
+    function drawSquare(x, y, size, color) {
+      return `<rect x="${x}" y="${y}" width="${size}" height="${size}" fill="${color}"/>`;
+    }
+
+    function drawGappedSquare(x, y, size, color) {
+      const gap = size * 0.1;
+      const inner = size * 0.8;
+      return `<rect x="${x + gap}" y="${y + gap}" width="${inner}" height="${inner}" fill="${color}"/>`;
+    }
+
+    function drawCircle(x, y, size, color) {
+      const radius = size / 2;
+      return `<circle cx="${x + radius}" cy="${y + radius}" r="${radius}" fill="${color}"/>`;
+    }
+
+    function drawRound(x, y, size, color, matrix, row, col, count) {
+      const hasN = hasNeighbor(matrix, row, col, "N", count);
+      const hasS = hasNeighbor(matrix, row, col, "S", count);
+      const hasE = hasNeighbor(matrix, row, col, "E", count);
+      const hasW = hasNeighbor(matrix, row, col, "W", count);
+      const radius = size / 2;
+      const nw = !hasW && !hasN;
+      const ne = !hasN && !hasE;
+      const se = !hasE && !hasS;
+      const sw = !hasS && !hasW;
+      const parts = [];
+
+      parts.push(nw ? `M ${x + radius},${y}` : `M ${x},${y}`);
+      if (ne) parts.push(`L ${x + size - radius},${y}`, `A ${radius},${radius} 0 0 1 ${x + size},${y + radius}`);
+      else parts.push(`L ${x + size},${y}`);
+      if (se) parts.push(`L ${x + size},${y + size - radius}`, `A ${radius},${radius} 0 0 1 ${x + size - radius},${y + size}`);
+      else parts.push(`L ${x + size},${y + size}`);
+      if (sw) parts.push(`L ${x + radius},${y + size}`, `A ${radius},${radius} 0 0 1 ${x},${y + size - radius}`);
+      else parts.push(`L ${x},${y + size}`);
+      if (nw) parts.push(`L ${x},${y + radius}`, `A ${radius},${radius} 0 0 1 ${x + radius},${y}`);
+      else parts.push(`L ${x},${y}`);
+      parts.push("Z");
+      return `<path d="${parts.join(" ")}" fill="${color}"/>`;
+    }
+
+    function drawVerticalBars(x, y, size, color, matrix, row, col, count) {
+      const hasN = hasNeighbor(matrix, row, col, "N", count);
+      const hasS = hasNeighbor(matrix, row, col, "S", count);
+      const half = size / 2;
+      const width = size * 0.8;
+      const xAdjusted = x + (size - width) / 2;
+      const parts = [];
+
+      if (hasN) {
+        parts.push(`<rect x="${xAdjusted}" y="${y}" width="${width}" height="${half}" fill="${color}"/>`);
+      } else {
+        const rx = width / 2;
+        parts.push(`<path d="M ${xAdjusted},${y + half} L ${xAdjusted},${y + half} A ${rx},${half} 0 0 1 ${xAdjusted + width},${y + half} L ${xAdjusted + width},${y + half} Z" fill="${color}"/>`);
+      }
+      if (hasS) {
+        parts.push(`<rect x="${xAdjusted}" y="${y + half}" width="${width}" height="${half}" fill="${color}"/>`);
+      } else {
+        const rx = width / 2;
+        parts.push(`<path d="M ${xAdjusted},${y + half} L ${xAdjusted},${y + half} A ${rx},${half} 0 0 0 ${xAdjusted + width},${y + half} L ${xAdjusted + width},${y + half} Z" fill="${color}"/>`);
+      }
+
+      return parts.join("\n");
+    }
+
+    function drawHorizontalBars(x, y, size, color, matrix, row, col, count) {
+      const hasW = hasNeighbor(matrix, row, col, "W", count);
+      const hasE = hasNeighbor(matrix, row, col, "E", count);
+      const half = size / 2;
+      const height = size * 0.8;
+      const yAdjusted = y + (size - height) / 2;
+      const centerX = x + half;
+      const ry = height / 2;
+      const parts = [];
+
+      if (hasW) {
+        parts.push(`<rect x="${x}" y="${yAdjusted}" width="${half}" height="${height}" fill="${color}"/>`);
+      } else {
+        parts.push(`<path d="M ${centerX},${yAdjusted} A ${half},${ry} 0 0 0 ${centerX},${yAdjusted + height} L ${centerX},${yAdjusted} Z" fill="${color}"/>`);
+      }
+      if (hasE) {
+        parts.push(`<rect x="${x + half}" y="${yAdjusted}" width="${half}" height="${height}" fill="${color}"/>`);
+      } else {
+        parts.push(`<path d="M ${centerX},${yAdjusted} A ${half},${ry} 0 0 1 ${centerX},${yAdjusted + height} L ${centerX},${yAdjusted} Z" fill="${color}"/>`);
+      }
+
+      return parts.join("\n");
+    }
+
+    function drawModule(style, x, y, size, color, matrix, row, col, count) {
+      if (style === "square") return drawSquare(x, y, size, color);
+      if (style === "gapped-square") return drawGappedSquare(x, y, size, color);
+      if (style === "circle") return drawCircle(x, y, size, color);
+      if (style === "vertical-bars") return drawVerticalBars(x, y, size, color, matrix, row, col, count);
+      if (style === "horizontal-bars") return drawHorizontalBars(x, y, size, color, matrix, row, col, count);
+      return drawRound(x, y, size, color, matrix, row, col, count);
+    }
+
+    function buildEyeMatrix(kind) {
+      if (kind === "inner") return Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => true));
+      const matrix = Array.from({ length: 7 }, () => Array.from({ length: 7 }, () => false));
+      for (let row = 0; row < 7; row += 1) {
+        for (let col = 0; col < 7; col += 1) {
+          matrix[row][col] = !(col >= 1 && col <= 5 && row >= 1 && row <= 5);
+        }
+      }
+      return matrix;
+    }
+
+    function drawEyes(parts, count, border, boxSize, innerStyle, outerStyle, innerColor, outerColor) {
+      const positions = [[0, 0], [count - 7, 0], [0, count - 7]];
+      const outerMatrix = buildEyeMatrix("outer");
+      const innerMatrix = buildEyeMatrix("inner");
+
+      positions.forEach(([eyeCol, eyeRow]) => {
+        const baseX = (border + eyeCol) * boxSize;
+        const baseY = (border + eyeRow) * boxSize;
+
+        for (let row = 0; row < 7; row += 1) {
+          for (let col = 0; col < 7; col += 1) {
+            if (!outerMatrix[row][col]) continue;
+            parts.push(drawModule(
+              outerStyle,
+              baseX + col * boxSize,
+              baseY + row * boxSize,
+              boxSize,
+              outerColor,
+              outerMatrix,
+              row,
+              col,
+              7
+            ));
+          }
+        }
+
+        for (let row = 0; row < 3; row += 1) {
+          for (let col = 0; col < 3; col += 1) {
+            parts.push(drawModule(
+              innerStyle,
+              baseX + (2 + col) * boxSize,
+              baseY + (2 + row) * boxSize,
+              boxSize,
+              innerColor,
+              innerMatrix,
+              row,
+              col,
+              3
+            ));
+          }
+        }
+      });
+    }
+
+    function getLogoHref() {
+      if (els.imageMode.value === "default") return "../assets/default.png";
+      if (els.imageMode.value === "arxiv") return ARXIV_LOGO_PATH;
+      if (els.imageMode.value === "github") return GITHUB_LOGO_PATH;
+      if (els.imageMode.value === "upload") return uploadedLogo;
+      return "";
+    }
+
+    function blobToDataUrl(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(reader.error || new Error("Could not read logo file."));
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function getEmbeddedLogoHref() {
+      const href = getLogoHref();
+      if (!href || href.startsWith("data:")) return href;
+      if (logoDataUrlCache.has(href)) return logoDataUrlCache.get(href);
+      const response = await fetch(href);
+      if (!response.ok) throw new Error(`Could not load logo asset: ${href}`);
+      const dataUrl = await blobToDataUrl(await response.blob());
+      logoDataUrlCache.set(href, dataUrl);
+      return dataUrl;
+    }
+
+    function getLogoAspectRatio() {
+      if (els.imageMode.value === "arxiv") return 246.978 / 111.119;
+      if (els.imageMode.value === "github") return 98 / 96;
+      return 1;
+    }
+
+    function alignClearSpanToQrCenter(span, modulesCount) {
+      let aligned = span;
+      if ((aligned % 2) !== (modulesCount % 2)) {
+        aligned = aligned < modulesCount ? aligned + 1 : aligned - 1;
+      }
+      return Math.max(1, Math.min(modulesCount, aligned));
+    }
+
+    async function getLogoSpec(size, boxSize, border, modulesCount) {
+      const href = await getEmbeddedLogoHref();
+      if (!href) return null;
+      const logoSize = Math.round(size * clampNumber(els.logoSize, 18) / 100);
+      const aspectRatio = getLogoAspectRatio();
+      const logoWidth = logoSize;
+      const logoHeight = Math.round(logoWidth / aspectRatio);
+      const paddingModules = clampNumber(els.logoPadding, 2);
+      const desiredModuleWidth = logoWidth / boxSize + paddingModules * 2;
+      const desiredModuleHeight = logoHeight / boxSize + paddingModules * 2;
+      const clearCols = alignClearSpanToQrCenter(Math.ceil(desiredModuleWidth), modulesCount);
+      const clearRows = alignClearSpanToQrCenter(Math.ceil(desiredModuleHeight), modulesCount);
+      const clearStartCol = Math.max(0, (modulesCount - clearCols) / 2);
+      const clearStartRow = Math.max(0, (modulesCount - clearRows) / 2);
+      const backplateX = (border + clearStartCol) * boxSize;
+      const backplateY = (border + clearStartRow) * boxSize;
+      const backplateWidth = clearCols * boxSize;
+      const backplateHeight = clearRows * boxSize;
+      const logoX = Math.round((size - logoWidth) / 2);
+      const logoY = Math.round((size - logoHeight) / 2);
+      return {
+        href,
+        logoWidth,
+        logoHeight,
+        logoX,
+        logoY,
+        backplateWidth,
+        backplateHeight,
+        backplateX,
+        backplateY,
+        clearStartCol,
+        clearStartRow,
+        clearEndCol: clearStartCol + clearCols,
+        clearEndRow: clearStartRow + clearRows,
+        radius: Math.max(6, Math.round(boxSize * 1.2))
+      };
+    }
+
+    function isInLogoBackplate(col, row, logoSpec) {
+      if (!logoSpec || !els.logoBackplate.checked) return false;
+      return (
+        col >= logoSpec.clearStartCol &&
+        col < logoSpec.clearEndCol &&
+        row >= logoSpec.clearStartRow &&
+        row < logoSpec.clearEndRow
+      );
+    }
+
+    function makeQr(data, requestedVersion, correctionLevel) {
+      let lastError = null;
+      for (let version = requestedVersion; version <= 40; version += 1) {
+        try {
+          const qr = qrcode(version, correctionLevel);
+          qr.addData(data);
+          qr.make();
+          return { qr, version };
+        } catch (error) {
+          lastError = error;
+        }
+      }
+      throw lastError || new Error("Could not generate QR code.");
+    }
+
+    async function buildSvg() {
+      const data = els.data.value.trim();
+      if (!data) throw new Error(t("dataRequired"));
+      if (!isValidWebsiteAddress(data)) throw new Error(t("invalidWebsiteAddress"));
+      if (typeof qrcode !== "function") throw new Error(t("qrLibraryFailed"));
+
+      const version = clampNumber(els.version, 5);
+      const boxSize = clampNumber(els.boxSize, 10);
+      const border = clampNumber(els.border, 4);
+      const { qr, version: actualVersion } = makeQr(data, version, els.errorCorrection.value);
+
+      const count = qr.getModuleCount();
+      const size = (count + border * 2) * boxSize;
+      const logoSpec = await getLogoSpec(size, boxSize, border, count);
+      const matrix = Array.from({ length: count }, (_, row) =>
+        Array.from({ length: count }, (_, col) => qr.isDark(row, col))
+      );
+      const parts = [
+        `<svg id="qrSvg" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">`
+      ];
+
+      if (!els.transparent.checked) {
+        parts.push(`<rect width="${size}" height="${size}" fill="white"/>`);
+      }
+
+      for (let row = 0; row < count; row += 1) {
+        for (let col = 0; col < count; col += 1) {
+          if (!matrix[row][col] || isEyeModule(col, row, count)) continue;
+          if (isInLogoBackplate(col, row, logoSpec)) continue;
+          parts.push(drawModule(
+            els.style.value,
+            (border + col) * boxSize,
+            (border + row) * boxSize,
+            boxSize,
+            els.baseColor.value,
+            matrix,
+            row,
+            col,
+            count
+          ));
+        }
+      }
+
+      drawEyes(
+        parts,
+        count,
+        border,
+        boxSize,
+        els.styleInner.value,
+        els.styleOuter.value,
+        els.innerColor.value,
+        els.outerColor.value
+      );
+
+      if (logoSpec) {
+        if (els.logoBackplate.checked) {
+          parts.push(`<rect x="${logoSpec.backplateX}" y="${logoSpec.backplateY}" width="${logoSpec.backplateWidth}" height="${logoSpec.backplateHeight}" rx="${logoSpec.radius}" fill="white"/>`);
+        }
+        parts.push(`<image x="${logoSpec.logoX}" y="${logoSpec.logoY}" width="${logoSpec.logoWidth}" height="${logoSpec.logoHeight}" href="${escAttr(logoSpec.href)}"/>`);
+      }
+
+      parts.push("</svg>");
+      currentSize = size;
+      if (actualVersion > version) {
+        setStatus("versionFallback", { actual: String(actualVersion), requested: String(version) });
+      }
+      return parts.join("\n");
+    }
+
+    function shellQuote(value) {
+      return `"${String(value).replaceAll('"', '\\"')}"`;
+    }
+
+    function updateCommand() {
+      const args = [
+        "qrcode-pretty",
+        "-d",
+        shellQuote(els.data.value.trim() || "data"),
+        "--style",
+        els.style.value,
+        "--style-inner",
+        els.styleInner.value,
+        "--style-outer",
+        els.styleOuter.value,
+        "--base",
+        shellQuote(els.baseColor.value),
+        "--color-inner",
+        shellQuote(els.innerColor.value),
+        "--color-outer",
+        shellQuote(els.outerColor.value),
+        "--version",
+        els.version.value,
+        "--box-size",
+        els.boxSize.value,
+        "--border",
+        els.border.value,
+        "--error-correction",
+        els.errorCorrection.value,
+        "--svg"
+      ];
+      if (els.transparent.checked) args.push("--transparent");
+      if (els.imageMode.value === "default") args.push("--image", "default");
+      if (els.imageMode.value === "arxiv") args.push("--image", shellQuote("assets/arxiv-logo.svg"));
+      if (els.imageMode.value === "github") args.push("--image", shellQuote("assets/github-logo.svg"));
+      if (els.imageMode.value === "upload") args.push("--image", shellQuote("path/to/logo.png"));
+      els.commandPreview.textContent = args.join(" ");
+    }
+
+    async function render() {
+      updateImageControlsVisibility();
+      updateCommand();
+      updatePresetEditorVisibility();
+      try {
+        els.status.textContent = "";
+        currentSvg = await buildSvg();
+        els.qrMount.innerHTML = currentSvg;
+        const warnings = getContrastWarnings();
+        if (warnings.length) {
+          els.status.textContent = warnings.join(". ") + ".";
+        }
+      } catch (error) {
+        currentSvg = "";
+        els.qrMount.innerHTML = "";
+        els.status.textContent = error.message;
+      }
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadSvg() {
+      if (!currentSvg) return;
+      downloadBlob(new Blob([currentSvg], { type: "image/svg+xml" }), "qrcode.svg");
+    }
+
+    function downloadPng() {
+      if (!currentSvg) return;
+      const img = new Image();
+      const svgUrl = URL.createObjectURL(new Blob([currentSvg], { type: "image/svg+xml" }));
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = currentSize;
+        canvas.height = currentSize;
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, currentSize, currentSize);
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(svgUrl);
+        canvas.toBlob((blob) => downloadBlob(blob, "qrcode.png"), "image/png");
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(svgUrl);
+        setStatus("pngFailed");
+      };
+      img.src = svgUrl;
+    }
+
+    els.imageUpload.addEventListener("change", () => {
+      const file = els.imageUpload.files[0];
+      if (!file) {
+        uploadedLogo = "";
+        void render();
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        uploadedLogo = String(reader.result);
+        void render();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    els.builtInPreset.addEventListener("change", () => {
+      const preset = BUILT_IN_PRESETS.find((item) => item.id === els.builtInPreset.value);
+      if (preset) applySettings(preset.values);
+    });
+
+    els.languageOptions.forEach((option) => {
+      option.addEventListener("click", () => {
+        applyLanguage(option.dataset.language);
+        void render();
+      });
+    });
+
+    els.applySavedPreset.addEventListener("click", () => {
+      const saved = readSavedPresets();
+      const preset = saved[Number(els.savedPreset.value)];
+      if (preset) applySettings(preset.values);
+    });
+
+    els.savePreset.addEventListener("click", () => {
+      const name = els.presetName.value.trim();
+      if (!name) {
+        setStatus("presetNameRequired");
+        return;
+      }
+      const saved = readSavedPresets();
+      const nextPreset = { name, values: getCurrentSettings() };
+      const existingIndex = saved.findIndex((preset) => preset.name === name);
+      if (existingIndex >= 0) saved[existingIndex] = nextPreset;
+      else saved.push(nextPreset);
+      writeSavedPresets(saved);
+      hydratePresetSelects();
+      els.savedPreset.value = String(saved.findIndex((preset) => preset.name === name));
+      setBaselineToCurrentSettings();
+      setStatus("presetSaved", { name });
+    });
+
+    els.deletePreset.addEventListener("click", () => {
+      const saved = readSavedPresets();
+      const index = Number(els.savedPreset.value);
+      if (!saved[index]) return;
+      const removed = saved.splice(index, 1)[0];
+      writeSavedPresets(saved);
+      hydratePresetSelects();
+      setStatus("presetDeleted", { name: removed.name });
+    });
+
+    document.querySelectorAll("input, select, textarea").forEach((input) => {
+      input.addEventListener("input", () => { void render(); });
+      input.addEventListener("change", () => { void render(); });
+    });
+    els.downloadSvg.addEventListener("click", downloadSvg);
+    els.downloadPng.addEventListener("click", downloadPng);
+
+    applyLanguage(currentLanguage);
+    void render();
+    setBaselineToCurrentSettings();
+  </script>
+</body>
+</html>
