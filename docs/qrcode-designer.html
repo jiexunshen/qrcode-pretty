@@ -599,8 +599,14 @@
         presetDeleted: "已删除预设“{name}”。"
       }
     };
-    const ARXIV_LOGO_PATH = "../assets/arxiv-logo.svg";
-    const GITHUB_LOGO_PATH = "../assets/github-logo.svg";
+    function assetPath(filename) {
+      const fromDocs = window.location.pathname.includes("/docs/");
+      return `${fromDocs ? "../" : ""}assets/${filename}`;
+    }
+
+    const DEFAULT_LOGO_PATH = assetPath("default.png");
+    const ARXIV_LOGO_PATH = assetPath("arxiv-logo.svg");
+    const GITHUB_LOGO_PATH = assetPath("github-logo.svg");
 
     const BUILT_IN_PRESETS = [
       {
@@ -1125,7 +1131,7 @@
     }
 
     function getLogoHref() {
-      if (els.imageMode.value === "default") return "../assets/default.png";
+      if (els.imageMode.value === "default") return DEFAULT_LOGO_PATH;
       if (els.imageMode.value === "arxiv") return ARXIV_LOGO_PATH;
       if (els.imageMode.value === "github") return GITHUB_LOGO_PATH;
       if (els.imageMode.value === "upload") return uploadedLogo;
